@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cipher Decoder Puzzle</title>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const CipherPuzzle = () => {
+          const [puzzle, setPuzzle] = useState(null);
+          const [userMapping, setUserMapping] = useState({});
+          const [solved, setSolved] = useState(false);
+          const [hints, setHints] = useState([]);
+          const [hintLevel, setHintLevel] = useState(0);
+          const [directInput, setDirectInput] = useState('');
+
+          const phrases = [
+            // Classic Wisdom & Proverbs
+            "THE TRUTH IS RARELY PURE AND NEVER SIMPLE",
+            "IN THE MIDDLE OF DIFFICULTY LIES OPPORTUNITY",
+            "KNOWLEDGE IS POWER",
+            "THE ONLY WAY OUT IS THROUGH",
+            "FORTUNE FAVORS THE BOLD",
+            "WHAT WE THINK WE BECOME",
+            "TIME IS THE WISEST COUNSELOR",
+            "ACTIONS SPEAK LOUDER THAN WORDS",
+            "EVERY MOMENT IS A FRESH BEGINNING",
+            "THE JOURNEY OF A THOUSAND MILES BEGINS WITH ONE STEP",
+            "WHERE THERE IS LOVE THERE IS LIFE",
+            "BE THE CHANGE YOU WISH TO SEE IN THE WORLD",
+            "THE ONLY IMPOSSIBLE JOURNEY IS THE ONE YOU NEVER BEGIN",
+            "LIFE IS WHAT HAPPENS WHEN YOU ARE BUSY MAKING OTHER PLANS",
+            "THE BEST TIME TO PLANT A TREE WAS TWENTY YEARS AGO",
+            "A SMOOTH SEA NEVER MADE A SKILLED SAILOR",
+            "THE FUTURE BELONGS TO THOSE WHO BELIEVE IN THE BEAUTY OF THEIR DREAMS",
+            "IT ALWAYS SEEMS IMPOSSIBLE UNTIL IT IS DONE",
+            "THE GREATEST GLORY IN LIVING LIES NOT IN NEVER FALLING BUT IN RISING EVERY TIME WE FALL",
+            "DO NOT GO WHERE THE PATH MAY LEAD GO INSTEAD WHERE THERE IS NO PATH AND LEAVE A TRAIL",
+            
+            // Motivation & Success
+            "SUCCESS IS NOT FINAL FAILURE IS NOT FATAL",
+            "THE SECRET OF GETTING AHEAD IS GETTING STARTED",
+            "BELIEVE YOU CAN AND YOU ARE HALFWAY THERE",
+            "YOUR LIMITATION IS ONLY YOUR IMAGINATION",
+            "GREAT THINGS NEVER COME FROM COMFORT ZONES",
+            "DREAM IT WISH IT DO IT",
+            "SUCCESS DOES NOT JUST FIND YOU YOU HAVE TO GO OUT AND GET IT",
+            "THE HARDER YOU WORK FOR SOMETHING THE GREATER YOU WILL FEEL WHEN YOU ACHIEVE IT",
+            "DREAM BIGGER DO BIGGER",
+            "DO NOT STOP WHEN YOU ARE TIRED STOP WHEN YOU ARE DONE",
+            "WAKE UP WITH DETERMINATION GO TO BED WITH SATISFACTION",
+            "DO SOMETHING TODAY THAT YOUR FUTURE SELF WILL THANK YOU FOR",
+            "LITTLE THINGS MAKE BIG DAYS",
+            "IT IS GOING TO BE HARD BUT HARD DOES NOT MEAN IMPOSSIBLE",
+            "DO NOT WAIT FOR OPPORTUNITY CREATE IT",
+            
+            // Philosophy & Reflection
+            "THE UNEXAMINED LIFE IS NOT WORTH LIVING",
+            "I THINK THEREFORE I AM",
+            "TO BE YOURSELF IN A WORLD THAT IS CONSTANTLY TRYING TO MAKE YOU SOMETHING ELSE IS THE GREATEST ACCOMPLISHMENT",
+            "THE ONLY TRUE WISDOM IS IN KNOWING YOU KNOW NOTHING",
+            "HAPPINESS IS NOT SOMETHING READY MADE IT COMES FROM YOUR OWN ACTIONS",
+            "THE MIND IS EVERYTHING WHAT YOU THINK YOU BECOME",
+            "LIFE CAN ONLY BE UNDERSTOOD BACKWARDS BUT IT MUST BE LIVED FORWARDS",
+            "WE ARE WHAT WE REPEATEDLY DO EXCELLENCE THEN IS NOT AN ACT BUT A HABIT",
+            "THE MEANING OF LIFE IS TO FIND YOUR GIFT THE PURPOSE OF LIFE IS TO GIVE IT AWAY",
+            "IN THREE WORDS I CAN SUM UP EVERYTHING I HAVE LEARNED ABOUT LIFE IT GOES ON",
+            
+            // Courage & Perseverance
+            "COURAGE IS NOT THE ABSENCE OF FEAR BUT THE TRIUMPH OVER IT",
+            "FALL SEVEN TIMES STAND UP EIGHT",
+            "THE ONLY WAY TO DO GREAT WORK IS TO LOVE WHAT YOU DO",
+            "IF YOU WANT TO LIFT YOURSELF UP LIFT UP SOMEONE ELSE",
+            "WHAT LIES BEHIND US AND WHAT LIES BEFORE US ARE TINY MATTERS COMPARED TO WHAT LIES WITHIN US",
+            "THE BEST REVENGE IS MASSIVE SUCCESS",
+            "I HAVE NOT FAILED I HAVE JUST FOUND TEN THOUSAND WAYS THAT WILL NOT WORK",
+            "A PERSON WHO NEVER MADE A MISTAKE NEVER TRIED ANYTHING NEW",
+            "EVERYTHING YOU CAN IMAGINE IS REAL",
+            "LIFE IS TEN PERCENT WHAT HAPPENS TO YOU AND NINETY PERCENT HOW YOU RESPOND TO IT",
+            
+            // Change & Growth
+            "YESTERDAY I WAS CLEVER SO I WANTED TO CHANGE THE WORLD TODAY I AM WISE SO I AM CHANGING MYSELF",
+            "THE ONLY CONSTANT IN LIFE IS CHANGE",
+            "CHANGE YOUR THOUGHTS AND YOU CHANGE YOUR WORLD",
+            "GROWTH IS PAINFUL CHANGE IS PAINFUL BUT NOTHING IS AS PAINFUL AS STAYING STUCK SOMEWHERE YOU DO NOT BELONG",
+            "IF YOU DO NOT LIKE SOMETHING CHANGE IT IF YOU CANNOT CHANGE IT CHANGE YOUR ATTITUDE",
+            "THE MEASURE OF INTELLIGENCE IS THE ABILITY TO CHANGE",
+            "PROGRESS IS IMPOSSIBLE WITHOUT CHANGE AND THOSE WHO CANNOT CHANGE THEIR MINDS CANNOT CHANGE ANYTHING",
+            "YOU MUST BE THE CHANGE YOU WISH TO SEE IN THE WORLD",
+            
+            // Time & Opportunity
+            "THE TWO MOST IMPORTANT DAYS IN YOUR LIFE ARE THE DAY YOU ARE BORN AND THE DAY YOU FIND OUT WHY",
+            "TIME YOU ENJOY WASTING IS NOT WASTED TIME",
+            "THE PAST CANNOT BE CHANGED THE FUTURE IS YET IN YOUR POWER",
+            "LOST TIME IS NEVER FOUND AGAIN",
+            "DO NOT COUNT THE DAYS MAKE THE DAYS COUNT",
+            "CARPE DIEM SEIZE THE DAY",
+            
+            // Wisdom & Learning
+            "AN INVESTMENT IN KNOWLEDGE PAYS THE BEST INTEREST",
+            "TELL ME AND I FORGET TEACH ME AND I MAY REMEMBER INVOLVE ME AND I LEARN",
+            "THE BEAUTIFUL THING ABOUT LEARNING IS THAT NO ONE CAN TAKE IT AWAY FROM YOU",
+            "EDUCATION IS THE MOST POWERFUL WEAPON WHICH YOU CAN USE TO CHANGE THE WORLD",
+            "THE MORE THAT YOU READ THE MORE THINGS YOU WILL KNOW THE MORE THAT YOU LEARN THE MORE PLACES YOU WILL GO",
+            "LIVE AS IF YOU WERE TO DIE TOMORROW LEARN AS IF YOU WERE TO LIVE FOREVER",
+            "IN LEARNING YOU WILL TEACH AND IN TEACHING YOU WILL LEARN",
+            
+            // Character & Integrity
+            "BE KIND WHENEVER POSSIBLE IT IS ALWAYS POSSIBLE",
+            "NO ACT OF KINDNESS NO MATTER HOW SMALL IS EVER WASTED",
+            "THE BEST WAY TO FIND YOURSELF IS TO LOSE YOURSELF IN THE SERVICE OF OTHERS",
+            "HONESTY IS THE FIRST CHAPTER IN THE BOOK OF WISDOM",
+            "CHARACTER IS LIKE A TREE AND REPUTATION LIKE A SHADOW THE SHADOW IS WHAT WE THINK OF IT THE TREE IS THE REAL THING",
+            "INTEGRITY IS DOING THE RIGHT THING EVEN WHEN NO ONE IS WATCHING",
+            
+            // Achievement & Excellence
+            "QUALITY IS NOT AN ACT IT IS A HABIT",
+            "THE DIFFERENCE BETWEEN ORDINARY AND EXTRAORDINARY IS THAT LITTLE EXTRA",
+            "STRIVE NOT TO BE A SUCCESS BUT RATHER TO BE OF VALUE",
+            "AIM FOR THE MOON IF YOU MISS YOU MAY HIT A STAR",
+            "THE EXPERT IN ANYTHING WAS ONCE A BEGINNER",
+            "DO NOT WATCH THE CLOCK DO WHAT IT DOES KEEP GOING",
+            
+            // Creativity & Innovation
+            "CREATIVITY IS INTELLIGENCE HAVING FUN",
+            "INNOVATION DISTINGUISHES BETWEEN A LEADER AND A FOLLOWER",
+            "IMAGINATION IS MORE IMPORTANT THAN KNOWLEDGE",
+            "THE TRUE SIGN OF INTELLIGENCE IS NOT KNOWLEDGE BUT IMAGINATION",
+            "LOGIC WILL GET YOU FROM A TO B IMAGINATION WILL TAKE YOU EVERYWHERE",
+            
+            // Relationships & Connection
+            "A FRIEND IS ONE WHO KNOWS YOU AND LOVES YOU JUST THE SAME",
+            "WALKING WITH A FRIEND IN THE DARK IS BETTER THAN WALKING ALONE IN THE LIGHT",
+            "THE GREATEST GIFT OF LIFE IS FRIENDSHIP AND I HAVE RECEIVED IT",
+            "FAMILY IS NOT AN IMPORTANT THING IT IS EVERYTHING",
+            
+            // Hope & Optimism
+            "HOPE IS BEING ABLE TO SEE THAT THERE IS LIGHT DESPITE ALL OF THE DARKNESS",
+            "KEEP YOUR FACE ALWAYS TOWARD THE SUNSHINE AND SHADOWS WILL FALL BEHIND YOU",
+            "ONCE YOU CHOOSE HOPE ANYTHING IS POSSIBLE",
+            "EVEN THE DARKEST NIGHT WILL END AND THE SUN WILL RISE",
+            "THIS TOO SHALL PASS"
+          ];
+
+          const generatePuzzle = () => {
+            const phrase = phrases[Math.floor(Math.random() * phrases.length)];
+            const letters = [...new Set(phrase.replace(/\s/g, ''))];
+            
+            // Create random number mapping (1-26)
+            const availableNumbers = Array.from({length: 26}, (_, i) => i + 1);
+            const shuffled = availableNumbers.sort(() => Math.random() - 0.5);
+            
+            const letterToNumber = {};
+            letters.forEach((letter, index) => {
+              letterToNumber[letter] = shuffled[index];
+            });
+
+            const encodedPhrase = phrase.split('').map(char => 
+              char === ' ' ? '/' : letterToNumber[char]
+            );
+
+            // Pre-fill 3 random letters
+            const numbersToReveal = [...new Set(Object.values(letterToNumber))]
+              .sort(() => Math.random() - 0.5)
+              .slice(0, 3);
+            
+            const initialMapping = {};
+            numbersToReveal.forEach(num => {
+              const letter = Object.keys(letterToNumber).find(key => letterToNumber[key] === num);
+              initialMapping[num] = letter;
+            });
+
+            setPuzzle({
+              phrase,
+              letterToNumber,
+              encodedPhrase,
+              uniqueNumbers: [...new Set(Object.values(letterToNumber))].sort((a, b) => a - b)
+            });
+            setUserMapping(initialMapping);
+            setSolved(false);
+            setHints([]);
+            setHintLevel(0);
+            setDirectInput('');
+          };
+
+          useEffect(() => {
+            generatePuzzle();
+          }, []);
+
+          const handleLetterInput = (number, letter) => {
+            const upperLetter = letter.toUpperCase();
+            if (upperLetter.match(/[A-Z]/) || letter === '') {
+              setUserMapping({
+                ...userMapping,
+                [number]: upperLetter
+              });
+            }
+          };
+
+          const handleDirectInput = (input) => {
+            const upperInput = input.toUpperCase();
+            setDirectInput(upperInput);
+            
+            if (!puzzle) return;
+            
+            // Create new mapping based on the direct input
+            const newMapping = { ...userMapping };
+            
+            // Track position in the input (ignoring spaces in encoded phrase)
+            let inputPos = 0;
+            
+            for (let i = 0; i < puzzle.encodedPhrase.length; i++) {
+              const encodedChar = puzzle.encodedPhrase[i];
+              
+              if (encodedChar === '/') {
+                // Space in encoded phrase - expect space in input
+                if (upperInput[inputPos] === ' ') {
+                  inputPos++;
+                }
+                continue;
+              }
+              
+              // Get the letter at this position in the user's input
+              const inputChar = upperInput[inputPos];
+              
+              if (inputChar && inputChar.match(/[A-Z]/)) {
+                // Map this letter to the number at this position
+                newMapping[encodedChar] = inputChar;
+              }
+              
+              inputPos++;
+            }
+            
+            setUserMapping(newMapping);
+          };
+
+          const checkSolution = () => {
+            if (!puzzle) return;
+            
+            const decodedPhrase = puzzle.encodedPhrase.map(num => 
+              num === '/' ? ' ' : (userMapping[num] || '_')
+            ).join('');
+
+            if (decodedPhrase === puzzle.phrase) {
+              setSolved(true);
+            }
+          };
+
+          const getCongratulationMessage = () => {
+            if (hintLevel === 0) {
+              return "🏆 INCREDIBLE! You cracked it without any hints!";
+            } else if (hintLevel === 1) {
+              return "🌟 EXCELLENT! Solved with just one hint!";
+            } else if (hintLevel === 2) {
+              return "💪 GREAT JOB! You figured it out with minimal help!";
+            } else if (hintLevel === 3) {
+              return "👍 NICE WORK! You decoded the message!";
+            } else if (hintLevel === 4) {
+              return "✓ SOLVED! You got there in the end!";
+            } else {
+              return "✓ COMPLETED! The cipher is broken!";
+            }
+          };
+
+          const getDecodedDisplay = () => {
+            if (!puzzle) return '';
+            return puzzle.encodedPhrase.map((num, idx) => 
+              num === '/' ? ' ' : (userMapping[num] || '_')
+            ).join('');
+          };
+
+          const revealLetter = () => {
+            if (!puzzle) return;
+            
+            // Find a number that hasn't been solved yet
+            const unsolvedNumber = puzzle.uniqueNumbers.find(num => 
+              !userMapping[num] || userMapping[num] !== Object.keys(puzzle.letterToNumber).find(
+                key => puzzle.letterToNumber[key] === num
+              )
+            );
+
+            if (unsolvedNumber) {
+              const correctLetter = Object.keys(puzzle.letterToNumber).find(
+                key => puzzle.letterToNumber[key] === unsolvedNumber
+              );
+              setUserMapping({
+                ...userMapping,
+                [unsolvedNumber]: correctLetter
+              });
+            }
+          };
+
+          const getHint = () => {
+            if (!puzzle) return;
+            
+            const newHints = [...hints];
+            
+            if (hintLevel === 0) {
+              // Hint 1: Word count and length
+              const words = puzzle.phrase.split(' ');
+              newHints.push(`The phrase contains ${words.length} word${words.length > 1 ? 's' : ''}.`);
+            } else if (hintLevel === 1) {
+              // Hint 2: Most common letter
+              const letterCounts = {};
+              puzzle.phrase.replace(/\s/g, '').split('').forEach(letter => {
+                letterCounts[letter] = (letterCounts[letter] || 0) + 1;
+              });
+              const mostCommon = Object.entries(letterCounts).sort((a, b) => b[1] - a[1])[0];
+              const mostCommonNumber = puzzle.letterToNumber[mostCommon[0]];
+              newHints.push(`The most frequent letter appears ${mostCommon[1]} times and is represented by the number ${mostCommonNumber}.`);
+            } else if (hintLevel === 2) {
+              // Hint 3: Single letter word hint (if exists)
+              const words = puzzle.phrase.split(' ');
+              const singleLetterWord = words.find(w => w.length === 1);
+              if (singleLetterWord) {
+                const number = puzzle.letterToNumber[singleLetterWord];
+                newHints.push(`There's a single-letter word represented by the number ${number}. (Hint: It's likely "A" or "I")`);
+              } else {
+                // Alternative: reveal first letter of first word
+                const firstLetter = puzzle.phrase[0];
+                const firstNumber = puzzle.letterToNumber[firstLetter];
+                newHints.push(`The first word starts with the letter represented by number ${firstNumber}.`);
+              }
+            } else if (hintLevel === 3) {
+              // Hint 4: Category/theme - provide general helpful hint
+              const words = puzzle.phrase.split(' ');
+              const wordCount = words.length;
+              
+              if (wordCount <= 5) {
+                newHints.push("This is a short, memorable phrase or proverb.");
+              } else if (wordCount <= 10) {
+                newHints.push("This is an inspirational or philosophical quote.");
+              } else {
+                newHints.push("This is a longer wisdom quote or famous saying.");
+              }
+            } else {
+              // Hint 5+: Reveal a letter
+              revealLetter();
+              newHints.push("Revealed one letter in the cipher key!");
+            }
+            
+            setHints(newHints);
+            setHintLevel(hintLevel + 1);
+          };
+
+          if (!puzzle) return <div className="flex items-center justify-center h-screen">Loading...</div>;
+
+          return (
+            <div className="min-h-screen bg-gradient-to-br from-amber-900 via-stone-900 to-neutral-900 p-8">
+              <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-8">
+                  <h1 className="text-4xl font-serif text-amber-200 mb-2 tracking-wide">
+                    CIPHER DECODER
+                  </h1>
+                  <p className="text-amber-300/70 font-serif italic">
+                    Match the numbers to letters and reveal the hidden phrase
+                  </p>
+                </div>
+
+                {/* Success Message */}
+                {solved && (
+                  <div className="bg-gradient-to-r from-amber-900/50 to-amber-700/50 border-2 border-amber-500 rounded-lg p-6 text-center backdrop-blur mb-8 animate-pulse">
+                    <h2 className="text-3xl font-serif text-amber-200 mb-2">{getCongratulationMessage()}</h2>
+                    <p className="text-amber-300 italic">"{puzzle.phrase}"</p>
+                    <p className="text-amber-400/70 text-sm mt-2">Hints used: {hintLevel}</p>
+                  </div>
+                )}
+
+                {/* Encoded Phrase Display */}
+                <div className="bg-stone-800/50 border-2 border-amber-700/50 rounded-lg p-6 mb-6 backdrop-blur">
+                  <h2 className="text-amber-300 font-serif mb-3 text-sm tracking-widest">ENCODED MESSAGE:</h2>
+                  <div className="flex flex-wrap gap-2 mb-4 font-mono text-lg justify-center">
+                    {puzzle.encodedPhrase.map((num, idx) => (
+                      <span key={idx} className={num === '/' ? 'w-4' : 'text-amber-400'}>
+                        {num === '/' ? ' ' : num}
+                      </span>
+                    ))}
+                  </div>
+                  
+                  <h2 className="text-amber-300 font-serif mb-3 text-sm tracking-widest mt-6">YOUR SOLUTION:</h2>
+                  <div className="text-2xl font-serif tracking-wider text-center text-amber-100 bg-stone-900/50 p-4 rounded border border-amber-700/30 min-h-[60px] flex items-center justify-center">
+                    {getDecodedDisplay() || '_ '.repeat(puzzle.phrase.length)}
+                  </div>
+                  
+                  <h2 className="text-amber-300 font-serif mb-3 text-sm tracking-widest mt-6">OR TYPE YOUR SOLUTION:</h2>
+                  <input
+                    type="text"
+                    value={directInput}
+                    onChange={(e) => handleDirectInput(e.target.value)}
+                    placeholder="Type the phrase here..."
+                    disabled={solved}
+                    className="w-full text-xl font-serif tracking-wider text-center text-amber-100 bg-stone-900/50 p-4 rounded border border-amber-700/30 focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500 disabled:opacity-50 disabled:cursor-not-allowed placeholder:text-amber-700/40"
+                  />
+                </div>
+
+                {/* Number to Letter Mapping */}
+                <div className="bg-stone-800/50 border-2 border-amber-700/50 rounded-lg p-6 mb-6 backdrop-blur">
+                  <h2 className="text-amber-300 font-serif mb-4 text-sm tracking-widest">CIPHER KEY:</h2>
+                  <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3">
+                    {puzzle.uniqueNumbers.map(num => (
+                      <div key={num} className="flex flex-col items-center">
+                        <div className="text-amber-400 font-mono text-sm mb-1">{num}</div>
+                        <input
+                          type="text"
+                          maxLength="1"
+                          value={userMapping[num] || ''}
+                          onChange={(e) => handleLetterInput(num, e.target.value)}
+                          className="w-10 h-10 text-center bg-stone-900 border border-amber-700/50 rounded text-amber-100 font-serif text-lg focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
+                          disabled={solved}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Controls */}
+                <div className="flex flex-wrap gap-4 justify-center mb-6">
+                  <button
+                    onClick={checkSolution}
+                    disabled={solved}
+                    className="px-6 py-3 bg-amber-700 hover:bg-amber-600 disabled:bg-stone-700 disabled:text-stone-500 text-amber-100 font-serif rounded-lg transition-colors border border-amber-600"
+                  >
+                    CHECK SOLUTION
+                  </button>
+                  <button
+                    onClick={getHint}
+                    disabled={solved}
+                    className="px-6 py-3 bg-blue-900/50 hover:bg-blue-800/50 disabled:bg-stone-800 disabled:text-stone-600 text-blue-200 font-serif rounded-lg transition-colors border border-blue-700/50"
+                  >
+                    GET HINT ({hintLevel}/5)
+                  </button>
+                  <button
+                    onClick={generatePuzzle}
+                    className="px-6 py-3 bg-stone-700 hover:bg-stone-600 text-amber-200 font-serif rounded-lg transition-colors border border-stone-600"
+                  >
+                    NEW PUZZLE
+                  </button>
+                </div>
+
+                {/* Hints Display */}
+                {hints.length > 0 && (
+                  <div className="bg-blue-950/30 border-2 border-blue-800/50 rounded-lg p-6 mb-6 backdrop-blur">
+                    <h2 className="text-blue-300 font-serif mb-3 text-sm tracking-widest flex items-center gap-2">
+                      <span>💡</span> HINTS:
+                    </h2>
+                    <div className="space-y-2">
+                      {hints.map((hint, idx) => (
+                        <div key={idx} className="text-blue-200/90 font-serif text-sm bg-blue-950/20 p-3 rounded border border-blue-800/30">
+                          {idx + 1}. {hint}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Instructions */}
+                <div className="mt-8 text-center text-amber-300/60 text-sm font-serif space-y-1">
+                  <p>Each number represents a unique letter. Fill in the cipher key to decode the message.</p>
+                  <p>Or, if you know the phrase, type it directly and the cipher key will auto-fill!</p>
+                </div>
+              </div>
+            </div>
+          );
+        };
+
+        ReactDOM.render(<CipherPuzzle />, document.getElementById('root'));
+    </script>
+</body>
+</html>
