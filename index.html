@@ -18,10 +18,12 @@
         const CipherPuzzle = () => {
           const [puzzle, setPuzzle] = useState(null);
           const [userMapping, setUserMapping] = useState({});
+          const [initialMapping, setInitialMapping] = useState({});
           const [solved, setSolved] = useState(false);
           const [hints, setHints] = useState([]);
           const [hintLevel, setHintLevel] = useState(0);
           const [directInput, setDirectInput] = useState('');
+          const [selectedNumber, setSelectedNumber] = useState(null);
 
           const phrases = [
             // Classic Wisdom & Proverbs
@@ -186,15 +188,37 @@
               uniqueNumbers: [...new Set(Object.values(letterToNumber))].sort((a, b) => a - b)
             });
             setUserMapping(initialMapping);
+            setInitialMapping(initialMapping); // Store for reset
             setSolved(false);
             setHints([]);
             setHintLevel(0);
             setDirectInput('');
+            setSelectedNumber(null);
           };
 
           useEffect(() => {
             generatePuzzle();
           }, []);
+
+          const resetPuzzle = () => {
+            setUserMapping(initialMapping);
+            setDirectInput('');
+            setSelectedNumber(null);
+            setSolved(false);
+          };
+
+          const showSolution = () => {
+            if (!puzzle) return;
+            
+            const fullSolution = {};
+            Object.keys(puzzle.letterToNumber).forEach(letter => {
+              const number = puzzle.letterToNumber[letter];
+              fullSolution[number] = letter;
+            });
+            
+            setUserMapping(fullSolution);
+            setSolved(true);
+          };
 
           const handleLetterInput = (number, letter) => {
             const upperLetter = letter.toUpperCase();
@@ -375,20 +399,66 @@
                   </div>
                 )}
 
-                {/* Encoded Phrase Display */}
+                {/* Puzzle Display - Combined Numbers and Letters */}
                 <div className="bg-stone-800/50 border-2 border-amber-700/50 rounded-lg p-6 mb-6 backdrop-blur">
-                  <h2 className="text-amber-300 font-serif mb-3 text-sm tracking-widest">ENCODED MESSAGE:</h2>
-                  <div className="flex flex-wrap gap-2 mb-4 font-mono text-lg justify-center">
-                    {puzzle.encodedPhrase.map((num, idx) => (
-                      <span key={idx} className={num === '/' ? 'w-4' : 'text-amber-400'}>
-                        {num === '/' ? ' ' : num}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  <h2 className="text-amber-300 font-serif mb-3 text-sm tracking-widest mt-6">YOUR SOLUTION:</h2>
-                  <div className="text-2xl font-serif tracking-wider text-center text-amber-100 bg-stone-900/50 p-4 rounded border border-amber-700/30 min-h-[60px] flex items-center justify-center">
-                    {getDecodedDisplay() || '_ '.repeat(puzzle.phrase.length)}
+                  <h2 className="text-amber-300 font-serif mb-4 text-sm tracking-widest">DECODE THE MESSAGE:</h2>
+                  <div className="flex flex-wrap justify-center gap-x-6 gap-y-4 mb-6">
+                    {(() => {
+                      // Group letters into words to prevent word breaking
+                      const words = [];
+                      let currentWord = [];
+                      
+                      puzzle.encodedPhrase.forEach((num, idx) => {
+                        if (num === '/') {
+                          if (currentWord.length > 0) {
+                            words.push([...currentWord]);
+                            currentWord = [];
+                          }
+                        } else {
+                          currentWord.push({ num, idx });
+                        }
+                      });
+                      
+                      if (currentWord.length > 0) {
+                        words.push(currentWord);
+                      }
+                      
+                      return words.map((word, wordIdx) => (
+                        <div key={wordIdx} className="flex gap-1">
+                          {word.map(({ num, idx }) => {
+                            const isHighlighted = selectedNumber === num;
+                            
+                            return (
+                              <div 
+                                key={idx} 
+                                className={`flex flex-col items-center cursor-pointer transition-all ${
+                                  isHighlighted ? 'scale-110' : ''
+                                }`}
+                                onClick={() => setSelectedNumber(num)}
+                              >
+                                <div className={`text-sm font-mono mb-1 px-2 py-1 rounded transition-colors ${
+                                  isHighlighted ? 'bg-amber-500 text-stone-900 font-bold' : 'text-amber-400'
+                                }`}>
+                                  {num}
+                                </div>
+                                <input
+                                  type="text"
+                                  maxLength="1"
+                                  value={userMapping[num] || ''}
+                                  onChange={(e) => handleLetterInput(num, e.target.value)}
+                                  className={`w-10 h-10 text-center bg-stone-900 border rounded text-amber-100 font-serif text-lg focus:outline-none focus:ring-2 transition-all ${
+                                    isHighlighted 
+                                      ? 'border-amber-400 ring-2 ring-amber-400' 
+                                      : 'border-amber-700/50 focus:border-amber-500 focus:ring-amber-500'
+                                  }`}
+                                  disabled={solved}
+                                />
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ));
+                    })()}
                   </div>
                   
                   <h2 className="text-amber-300 font-serif mb-3 text-sm tracking-widest mt-6">OR TYPE YOUR SOLUTION:</h2>
@@ -402,24 +472,35 @@
                   />
                 </div>
 
-                {/* Number to Letter Mapping */}
+                {/* Cipher Key Reference */}
                 <div className="bg-stone-800/50 border-2 border-amber-700/50 rounded-lg p-6 mb-6 backdrop-blur">
-                  <h2 className="text-amber-300 font-serif mb-4 text-sm tracking-widest">CIPHER KEY:</h2>
+                  <h2 className="text-amber-300 font-serif mb-4 text-sm tracking-widest">CIPHER KEY REFERENCE:</h2>
                   <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3">
-                    {puzzle.uniqueNumbers.map(num => (
-                      <div key={num} className="flex flex-col items-center">
-                        <div className="text-amber-400 font-mono text-sm mb-1">{num}</div>
-                        <input
-                          type="text"
-                          maxLength="1"
-                          value={userMapping[num] || ''}
-                          onChange={(e) => handleLetterInput(num, e.target.value)}
-                          className="w-10 h-10 text-center bg-stone-900 border border-amber-700/50 rounded text-amber-100 font-serif text-lg focus:border-amber-500 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                          disabled={solved}
-                        />
-                      </div>
-                    ))}
+                    {puzzle.uniqueNumbers.map(num => {
+                      const isHighlighted = selectedNumber === num;
+                      return (
+                        <div 
+                          key={num} 
+                          className={`flex flex-col items-center cursor-pointer transition-all ${
+                            isHighlighted ? 'scale-110' : ''
+                          }`}
+                          onClick={() => setSelectedNumber(num)}
+                        >
+                          <div className={`text-sm font-mono mb-1 px-2 py-1 rounded transition-colors ${
+                            isHighlighted ? 'bg-amber-500 text-stone-900 font-bold' : 'text-amber-400'
+                          }`}>
+                            {num}
+                          </div>
+                          <div className={`text-amber-100 font-serif text-lg h-8 flex items-center justify-center ${
+                            isHighlighted ? 'font-bold' : ''
+                          }`}>
+                            {userMapping[num] || '_'}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
+                  <p className="text-amber-400/60 text-xs mt-4 text-center">Click any number to highlight all instances</p>
                 </div>
 
                 {/* Controls */}
@@ -437,6 +518,20 @@
                     className="px-6 py-3 bg-blue-900/50 hover:bg-blue-800/50 disabled:bg-stone-800 disabled:text-stone-600 text-blue-200 font-serif rounded-lg transition-colors border border-blue-700/50"
                   >
                     GET HINT ({hintLevel}/5)
+                  </button>
+                  <button
+                    onClick={resetPuzzle}
+                    disabled={solved}
+                    className="px-6 py-3 bg-orange-900/50 hover:bg-orange-800/50 disabled:bg-stone-800 disabled:text-stone-600 text-orange-200 font-serif rounded-lg transition-colors border border-orange-700/50"
+                  >
+                    RESET PUZZLE
+                  </button>
+                  <button
+                    onClick={showSolution}
+                    disabled={solved}
+                    className="px-6 py-3 bg-red-900/50 hover:bg-red-800/50 disabled:bg-stone-800 disabled:text-stone-600 text-red-200 font-serif rounded-lg transition-colors border border-red-700/50"
+                  >
+                    SHOW SOLUTION
                   </button>
                   <button
                     onClick={generatePuzzle}
@@ -464,8 +559,8 @@
 
                 {/* Instructions */}
                 <div className="mt-8 text-center text-amber-300/60 text-sm font-serif space-y-1">
-                  <p>Each number represents a unique letter. Fill in the cipher key to decode the message.</p>
-                  <p>Or, if you know the phrase, type it directly and the cipher key will auto-fill!</p>
+                  <p>Click any number to highlight all instances of that number in the puzzle.</p>
+                  <p>Fill in the letters to decode the message, or type the full phrase if you know it!</p>
                 </div>
               </div>
             </div>
