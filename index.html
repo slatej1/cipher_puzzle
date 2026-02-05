@@ -24,6 +24,9 @@
           const [hintLevel, setHintLevel] = useState(0);
           const [directInput, setDirectInput] = useState('');
           const [selectedNumber, setSelectedNumber] = useState(null);
+          const [hoveredNumber, setHoveredNumber] = useState(null);
+          const [duplicateLetters, setDuplicateLetters] = useState(new Set());
+          const [solutionRevealed, setSolutionRevealed] = useState(false);
 
           const phrases = [
             // Classic Wisdom & Proverbs
@@ -194,11 +197,29 @@
             setHintLevel(0);
             setDirectInput('');
             setSelectedNumber(null);
+            setSolutionRevealed(false);
           };
 
           useEffect(() => {
             generatePuzzle();
           }, []);
+
+          useEffect(() => {
+            // Check for duplicate letters
+            const letterCounts = {};
+            const duplicates = new Set();
+            
+            Object.values(userMapping).forEach(letter => {
+              if (letter && letter.trim() !== '') {
+                if (letterCounts[letter]) {
+                  duplicates.add(letter);
+                }
+                letterCounts[letter] = (letterCounts[letter] || 0) + 1;
+              }
+            });
+            
+            setDuplicateLetters(duplicates);
+          }, [userMapping]);
 
           const resetPuzzle = () => {
             setUserMapping(initialMapping);
@@ -218,6 +239,7 @@
             
             setUserMapping(fullSolution);
             setSolved(true);
+            setSolutionRevealed(true);
           };
 
           const handleLetterInput = (number, letter) => {
@@ -280,6 +302,10 @@
           };
 
           const getCongratulationMessage = () => {
+            if (solutionRevealed) {
+              return "💭 SOLUTION REVEALED - Better luck next time! Try another puzzle.";
+            }
+            
             if (hintLevel === 0) {
               return "🏆 INCREDIBLE! You cracked it without any hints!";
             } else if (hintLevel === 1) {
@@ -395,7 +421,17 @@
                   <div className="bg-gradient-to-r from-amber-900/50 to-amber-700/50 border-2 border-amber-500 rounded-lg p-6 text-center backdrop-blur mb-8 animate-pulse">
                     <h2 className="text-3xl font-serif text-amber-200 mb-2">{getCongratulationMessage()}</h2>
                     <p className="text-amber-300 italic">"{puzzle.phrase}"</p>
-                    <p className="text-amber-400/70 text-sm mt-2">Hints used: {hintLevel}</p>
+                    {!solutionRevealed && <p className="text-amber-400/70 text-sm mt-2">Hints used: {hintLevel}</p>}
+                  </div>
+                )}
+
+                {/* Duplicate Letter Warning */}
+                {duplicateLetters.size > 0 && !solved && (
+                  <div className="bg-red-950/50 border-2 border-red-700 rounded-lg p-4 text-center backdrop-blur mb-8">
+                    <h2 className="text-xl font-serif text-red-300 mb-1">⚠️ DUPLICATE LETTERS DETECTED</h2>
+                    <p className="text-red-200/80 text-sm">
+                      Each letter can only be used once. You have duplicate: <span className="font-bold">{Array.from(duplicateLetters).join(', ')}</span>
+                    </p>
                   </div>
                 )}
 
@@ -426,7 +462,7 @@
                       return words.map((word, wordIdx) => (
                         <div key={wordIdx} className="flex gap-1">
                           {word.map(({ num, idx }) => {
-                            const isHighlighted = selectedNumber === num;
+                            const isHighlighted = selectedNumber === num || hoveredNumber === num;
                             
                             return (
                               <div 
@@ -434,7 +470,9 @@
                                 className={`flex flex-col items-center cursor-pointer transition-all ${
                                   isHighlighted ? 'scale-110' : ''
                                 }`}
-                                onClick={() => setSelectedNumber(num)}
+                                onClick={() => setSelectedNumber(selectedNumber === num ? null : num)}
+                                onMouseEnter={() => setHoveredNumber(num)}
+                                onMouseLeave={() => setHoveredNumber(null)}
                               >
                                 <div className={`text-sm font-mono mb-1 px-2 py-1 rounded transition-colors ${
                                   isHighlighted ? 'bg-amber-500 text-stone-900 font-bold' : 'text-amber-400'
@@ -446,10 +484,12 @@
                                   maxLength="1"
                                   value={userMapping[num] || ''}
                                   onChange={(e) => handleLetterInput(num, e.target.value)}
-                                  className={`w-10 h-10 text-center bg-stone-900 border rounded text-amber-100 font-serif text-lg focus:outline-none focus:ring-2 transition-all ${
-                                    isHighlighted 
-                                      ? 'border-amber-400 ring-2 ring-amber-400' 
-                                      : 'border-amber-700/50 focus:border-amber-500 focus:ring-amber-500'
+                                  className={`w-10 h-10 text-center bg-stone-900 border rounded font-serif text-lg focus:outline-none focus:ring-2 transition-all ${
+                                    duplicateLetters.has(userMapping[num])
+                                      ? 'border-red-500 ring-2 ring-red-500 text-red-300'
+                                      : isHighlighted 
+                                        ? 'border-amber-400 ring-2 ring-amber-400 text-amber-100' 
+                                        : 'border-amber-700/50 focus:border-amber-500 focus:ring-amber-500 text-amber-100'
                                   }`}
                                   disabled={solved}
                                 />
@@ -477,14 +517,16 @@
                   <h2 className="text-amber-300 font-serif mb-4 text-sm tracking-widest">CIPHER KEY REFERENCE:</h2>
                   <div className="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-3">
                     {puzzle.uniqueNumbers.map(num => {
-                      const isHighlighted = selectedNumber === num;
+                      const isHighlighted = selectedNumber === num || hoveredNumber === num;
                       return (
                         <div 
                           key={num} 
                           className={`flex flex-col items-center cursor-pointer transition-all ${
                             isHighlighted ? 'scale-110' : ''
                           }`}
-                          onClick={() => setSelectedNumber(num)}
+                          onClick={() => setSelectedNumber(selectedNumber === num ? null : num)}
+                          onMouseEnter={() => setHoveredNumber(num)}
+                          onMouseLeave={() => setHoveredNumber(null)}
                         >
                           <div className={`text-sm font-mono mb-1 px-2 py-1 rounded transition-colors ${
                             isHighlighted ? 'bg-amber-500 text-stone-900 font-bold' : 'text-amber-400'
@@ -500,7 +542,7 @@
                       );
                     })}
                   </div>
-                  <p className="text-amber-400/60 text-xs mt-4 text-center">Click any number to highlight all instances</p>
+                  <p className="text-amber-400/60 text-xs mt-4 text-center">Click any number to highlight all instances • Hover to preview</p>
                 </div>
 
                 {/* Controls */}
